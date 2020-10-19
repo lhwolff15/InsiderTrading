@@ -11,3 +11,7 @@ If you would like to save the data into an excel file, uncomment Line 106 and en
 
 
 Any feedback would be greatly appreciated!
+
+# Edit:
+I wanted to include a link the page where the data is drawn from on the SEC site (the table on the bottom of the page). I just used Apple as an example.
+https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=0000320193

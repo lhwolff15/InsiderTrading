@@ -131,4 +131,6 @@ date = input('How far back would you like to go?(YYYY-MM-DD):  ')
 export_file = eval(input('Export file?(0 or 1):  '))
 if (export_file == 1):
     file_name = input('What would you like to name the file?:  ')
-insider_trading_all(symbols, date, export_file, file_name)
+    
+file_name = ''
+df = insider_trading_all(symbols, date, export_file, file_name)

@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from tqdm import tqdm
+import DatabaseStocks as Ds
 from datetime import date, timedelta
 import yfinance as yf
 
@@ -25,7 +26,8 @@ def insider_trading():
 
     print(dictionary)
     print(dictionary.keys())
-    symbols = dictionary.keys()
+    symbols = Ds.get_investing_lists()
+    # symbols = dictionary.keys()
 
     start = str(date.today()-timedelta(how_many_days_in_the_past))
     dfs = []
@@ -38,30 +40,23 @@ def insider_trading():
                     cik) + '&type=&dateb=&owner=include&start=' + str(page * 80)
                 urls = [beg_url]
                 df_data = []
-                for url in urls:
-                    soup = to_soup(url)
-                    transaction_report = soup.find('table', {'id': 'transaction-report'})
 
-                    t_chil = [i for i in transaction_report.children]
-                    t_cont = [i for i in t_chil if i != '\n']
+                soup = to_soup(beg_url)
+                transaction_report = soup.find('table', {'id': 'transaction-report'})
 
-                    headers = [i for i in t_cont[0].get_text().split('\n') if i != '']
-                    data_rough = [i for lst in t_cont[1:] for i in lst.get_text().split('\n') if i != '']
-                    data = [data_rough[i:i + 12] for i in range(0, len(data_rough), 12)]
-                    last_line = data[-1]
-                    for i in data:
-                        if (start > i[1]):
-                            break
-                        else:
-                            if (i != last_line):
-                                df_data.append(i)
-                            else:
-                                df_data.append(i)
-                                page += 1
-                                urls.append('https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=' + str(
-                                    cik) + '&type=&dateb=&owner=include&start=' + str(page * 80))
+                t_chil = [i for i in transaction_report.children]
+                t_cont = [i for i in t_chil if i != '\n']
+
+                headers = [i for i in t_cont[0].get_text().split('\n') if i != '']
+                data_rough = [i for lst in t_cont[1:] for i in lst.get_text().split('\n') if i != '']
+                data = [data_rough[i:i + 12] for i in range(0, len(data_rough), 12)]
+                for i in data:
+                    if (start > i[1]):
+                        break
+                    else:
+                        df_data.append(i)
                 if len(df_data) != 0:
-                    print(df_data)
+                    print(stock)
                     stock_data = yf.Ticker(stock)
                     price = float(stock_data.info["previousClose"])
                     df = pd.DataFrame(df_data, columns=headers)
@@ -75,9 +70,9 @@ def insider_trading():
                     num_sale = len(df[sale])
                     total_purch = int(df['Purch'].sum(skipna=True))
                     total_sale = int(df['Sale'].sum(skipna=True))
-                    total_value_purchased = total_purch * price
-                    total_value_sale = total_sale * price
-                    net_difference = total_value_purchased - total_value_sale
+                    total_value_purchased = int(total_purch * price)
+                    total_value_sale = int(total_sale * price)
+                    net_difference = pd.to_numeric(int(total_value_purchased - total_value_sale))
                     if num_purch != 0:
                         avg_purch = int(total_purch / num_purch)
                     else:
@@ -98,20 +93,24 @@ def insider_trading():
                                            'Total Value Sold': f'{total_value_sale:,}',
                                            'Net Diff': f'{net_difference:,}',
                                            'Avg Shares Bought': f'{avg_purch:,}',
-                                           'Avg Shares Sold': f'{avg_sale:,}'},
+                                           'Avg Shares Sold': f'{avg_sale:,}',
+                                           'Link': "https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=" +
+                                                   str(cik)},
                                           index=[0])
 
                     new_df.set_index('Symbol', inplace=True)
                     dfs.append(new_df)
                 pbar.update(1)
             except:
+                print("upsy " + stock)
                 pbar.update(1)
                 continue
     print('SCAN COMPLETE for period beginning: ' + start)
-    if len(dfs)>1:
+    if len(dfs) > 1:
         combo = pd.concat(dfs)
     else:
         combo = dfs
+    combo = combo.sort_values('Net Diff', ascending=False)
     combo.to_excel('results.xlsx', index=True)
 
-    return combo.sort_values('Net Diff', ascending=False).head(30)
+    return combo

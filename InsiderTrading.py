@@ -14,7 +14,7 @@ def to_soup(url):
     soup = BeautifulSoup(webpage, 'html.parser')
     return soup
 
-how_many_days_in_the_past = 190
+how_many_days_in_the_past = 4
 
 # Pulls the Insider Trading Statistics
 def insider_trading():
@@ -30,6 +30,7 @@ def insider_trading():
     # symbols = dictionary.keys()
 
     start = str(date.today()-timedelta(how_many_days_in_the_past))
+    end = str(date.today()+timedelta(30))
     dfs = []
     with tqdm(total=len(symbols)) as pbar:
         for stock in symbols:
@@ -51,7 +52,9 @@ def insider_trading():
                 data_rough = [i for lst in t_cont[1:] for i in lst.get_text().split('\n') if i != '']
                 data = [data_rough[i:i + 12] for i in range(0, len(data_rough), 12)]
                 for i in data:
-                    if (start > i[1]):
+                    if end < i[1]:
+                        continue
+                    if start > i[1]:
                         break
                     else:
                         df_data.append(i)
@@ -75,7 +78,7 @@ def insider_trading():
                     total_value_pure_purchased = int(int(df['Pure purchase'].sum(skipna=True)) * price)
                     total_value_purchased = int(total_purch * price)
                     total_value_sale = int(total_sale * price)
-                    net_difference = pd.to_numeric(int(total_value_purchased - total_value_sale))
+                    net_difference = int(pd.to_numeric(int(total_value_purchased - total_value_sale)))
                     if num_purch != 0:
                         avg_purch = int(total_purch / num_purch)
                     else:
@@ -86,24 +89,24 @@ def insider_trading():
                     else:
                         avg_sale = 0
                         ratio = 10000
-                    new_df = pd.DataFrame({'Symbol': stock,
-                                           'Purchases': num_purch,
-                                           'Sales': num_sale,
-                                           'Buy/Sell Ratio': ratio,
-                                           'Total Bought': f'{total_purch:,}',
-                                           'Total Sold': f'{total_sale:,}',
-                                           'Total Value Bought': f'{total_value_purchased:,}',
-                                           'Total Value Sold': f'{total_value_sale:,}',
-                                           'Total Value Pure purchase': f'{total_value_pure_purchased:,}',
-                                           'Net Diff': f'{net_difference:,}',
-                                           'Avg Shares Bought': f'{avg_purch:,}',
-                                           'Avg Shares Sold': f'{avg_sale:,}',
-                                           'Link': "https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=" +
-                                                   str(cik)},
-                                          index=[0])
+                    if abs(net_difference) > 500000:
+                        new_df = pd.DataFrame({'Symbol': stock,
+                                               'Purchases': num_purch,
+                                               'Sales': num_sale,
+                                               'Buy/Sell Ratio': ratio,
+                                               'Total Bought': f'{total_purch:,}',
+                                               'Total Sold': f'{total_sale:,}',
+                                               'Total Value Bought': f'{total_value_purchased:,}',
+                                               'Total Value Sold': f'{total_value_sale:,}',
+                                               'Net Diff': f'{net_difference:,}',
+                                               'Avg Shares Bought': f'{avg_purch:,}',
+                                               'Avg Shares Sold': f'{avg_sale:,}',
+                                               'Link': "https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=" +
+                                                       str(cik)},
+                                              index=[0])
 
-                    new_df.set_index('Symbol', inplace=True)
-                    dfs.append(new_df)
+                        new_df.set_index('Symbol', inplace=True)
+                        dfs.append(new_df)
                 pbar.update(1)
             except:
                 print("upsy " + stock)

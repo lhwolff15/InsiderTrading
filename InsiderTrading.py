@@ -14,7 +14,7 @@ def to_soup(url):
     soup = BeautifulSoup(webpage, 'html.parser')
     return soup
 
-how_many_days_in_the_past = 7
+how_many_days_in_the_past = 190
 
 # Pulls the Insider Trading Statistics
 def insider_trading():
@@ -62,6 +62,8 @@ def insider_trading():
                     df = pd.DataFrame(df_data, columns=headers)
                     df['Purch'] = pd.to_numeric(df['Acquistion or Disposition'].apply(lambda x: 1 if x == 'A' else 0)
                                                 * df['Number of Securities Transacted'])
+                    df['Pure purchase'] = pd.to_numeric(df['Transaction Type'].apply(lambda x: 1 if x == 'P-Purchase' else 0)
+                                                        * df['Number of Securities Transacted'])
                     df['Sale'] = pd.to_numeric(df['Acquistion or Disposition'].apply(lambda x: 1 if x == 'D' else 0)
                                                * df['Number of Securities Transacted'])
                     purch = df['Acquistion or Disposition'] == 'A'
@@ -70,6 +72,7 @@ def insider_trading():
                     num_sale = len(df[sale])
                     total_purch = int(df['Purch'].sum(skipna=True))
                     total_sale = int(df['Sale'].sum(skipna=True))
+                    total_value_pure_purchased = int(int(df['Pure purchase'].sum(skipna=True)) * price)
                     total_value_purchased = int(total_purch * price)
                     total_value_sale = int(total_sale * price)
                     net_difference = pd.to_numeric(int(total_value_purchased - total_value_sale))
@@ -91,6 +94,7 @@ def insider_trading():
                                            'Total Sold': f'{total_sale:,}',
                                            'Total Value Bought': f'{total_value_purchased:,}',
                                            'Total Value Sold': f'{total_value_sale:,}',
+                                           'Total Value Pure purchase': f'{total_value_pure_purchased:,}',
                                            'Net Diff': f'{net_difference:,}',
                                            'Avg Shares Bought': f'{avg_purch:,}',
                                            'Avg Shares Sold': f'{avg_sale:,}',

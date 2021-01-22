@@ -97,6 +97,7 @@ def insider_trading():
                                                'Total Bought': f'{total_purch:,}',
                                                'Total Sold': f'{total_sale:,}',
                                                'Total Value Bought': f'{total_value_purchased:,}',
+                                               'Total Value Pure Purchase': f'{total_value_pure_purchased:,}',
                                                'Total Value Sold': f'{total_value_sale:,}',
                                                'Net Diff': f'{net_difference:,}',
                                                'Avg Shares Bought': f'{avg_purch:,}',

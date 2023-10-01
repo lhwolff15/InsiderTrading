@@ -4,10 +4,13 @@ import pandas as pd
 import numpy as np
 from IPython.display import clear_output
 from tqdm import tqdm
-import pandas_datareader.data as web
+from pandas_datareader import data as pdr
+import yfinance as yf
 import datetime
 
-input_data_path = 'Put input_data_path.csv here'
+yf.pdr_override()
+
+input_data_path = 'ticker_and_edgar_cik.csv'
 ticker_cik = pd.read_csv(input_data_path, delimiter=',')
 sym_cik = ticker_cik.copy(deep=True)
 sym_cik.set_index('Ticker', inplace=True)
@@ -32,7 +35,7 @@ def to_soup(url):
     return soup
 #Calculates the period return
 def return_calc(symbol,start,end):
-    data = web.DataReader(symbol, 'yahoo', start, end)
+    data = pdr.get_data_yahoo(symbol, start, end)
     end_price = data['Adj Close'][-1]
     beg_price = data['Adj Close'][0]
     ret = round(((end_price/beg_price)-1)*100, 2)
@@ -117,7 +120,7 @@ def insider_trading_all(symbol_list, end_date, export_file=0, file_name=''):
     print('SCAN COMPLETE for period beginning: ' + end)
     
     if (export_file == 1):
-        combo.to_excel('Put where you want to save the data'+file_name+'.xlsx', index = True)
+        combo.to_excel(file_name+'.xlsx', index = True)
     return combo.sort_values('Buy/Sell Ratio',ascending = False).head(100)
 
 #User Input:
